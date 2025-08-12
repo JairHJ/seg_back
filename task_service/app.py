@@ -9,11 +9,12 @@ from functools import wraps
 app = Flask(__name__)
 CORS(app)
 
-SECRET_KEY = "miclavesecreta123"
+# Usa variable de entorno SECRET_KEY en producción. Define una por despliegue.
+import os
+SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-prod")
 
 
 # Conexión a MongoDB
-import os
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 mongo_client = MongoClient(MONGO_URI)
 mongo_db = mongo_client.get_database('task_service_db')
@@ -359,6 +360,17 @@ def enable_task(task_id):
 def health():
     return jsonify({'status': 'Task Service is running'}), 200
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({"message": "Task Service OK", "health": "/health"}), 200
+
+
 if __name__ == '__main__':
+    # Inicializamos la base de datos solo al arrancar el proceso principal
     init_db()
-    app.run(host="127.0.0.1", port=5003, debug=True)
+    import os
+    # Render expone el puerto en la variable de entorno PORT
+    port = int(os.environ.get('PORT', 5003))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    # Escuchar en 0.0.0.0 para que Render pueda hacer port binding
+    app.run(host="0.0.0.0", port=port, debug=debug)

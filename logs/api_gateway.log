@@ -183,3 +183,5 @@
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 15:57:41] "[33mOPTIONS /logs/all HTTP/1.1[0m" 404 -
+127.0.0.1 - - [12/Aug/2025 15:57:41] "[33mOPTIONS /logs/summary HTTP/1.1[0m" 404 -

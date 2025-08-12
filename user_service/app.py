@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'miclavesecreta123')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
 def token_required(f):
     from functools import wraps
@@ -29,9 +29,15 @@ def token_required(f):
 app = Flask(__name__)
 
 # Conexión a MongoDB
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/user_service_db')
+from urllib.parse import urlparse
+def _extract_db_name(uri: str, default_name: str) -> str:
+    parsed = urlparse(uri)
+    path = parsed.path.lstrip('/')
+    return path.split('/')[0] if path else default_name
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client.get_database('user_service_db')
+DB_NAME = os.environ.get('MONGO_DB_NAME', _extract_db_name(MONGO_URI, 'user_service_db'))
+mongo_db = mongo_client[DB_NAME]
 users_collection = mongo_db['users']
 
 @app.route('/users', methods=['GET'])
@@ -111,10 +117,16 @@ def delete_user(user_id):
     except Exception:
         return jsonify({"error": "ID inválido"}), 400
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({'service': 'User Service', 'health': '/health'}), 200
+
 @app.route('/health', methods=['GET'])
 @app.route('/healthz', methods=['GET'])
 def health():
-    return jsonify({'status': 'User Service is running'}), 200
+    return jsonify({'status': 'User Service is running', 'db': DB_NAME}), 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5002, debug=True)
+    port = int(os.environ.get('PORT', 5002))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(host="0.0.0.0", port=port, debug=debug)

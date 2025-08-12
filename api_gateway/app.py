@@ -6,17 +6,27 @@ import datetime
 import jwt
 from functools import wraps
 import os
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'miclavesecreta123')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
-# Conexión a MongoDB
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+# Conexión a MongoDB (API Gateway podría guardar logs u otra metadata)
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/api_gateway_db')
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client.get_database('task_service_db')
-tasks_collection = mongo_db['tasks']
+
+def _extract_db_name(uri: str, default_name: str) -> str:
+    parsed = urlparse(uri)
+    path = parsed.path.lstrip('/')
+    if path:
+        return path.split('/')[0]
+    return default_name
+
+DB_NAME = os.environ.get('MONGO_DB_NAME', _extract_db_name(MONGO_URI, 'api_gateway_db'))
+mongo_db = mongo_client[DB_NAME]
+tasks_collection = mongo_db['tasks']  # Placeholder; ideal: gateway no duplique lógica de task service
 
 def validate_date(date_str: str) -> bool:
     try:
@@ -96,11 +106,17 @@ def get_tasks():
 
 # ...otros endpoints de tasks...
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({'service': 'API Gateway', 'health': '/health'}), 200
+
 @app.route('/health', methods=['GET'])
 @app.route('/healthz', methods=['GET'])
 def health():
-    return jsonify({'status': 'Task Service is running'}), 200
+    return jsonify({'status': 'API Gateway running', 'db': DB_NAME}), 200
 
 if __name__ == '__main__':
-    init_db()
-    app.run(host="0.0.0.0", port=5003, debug=True)
+    # init_db()  # El gateway no debería poblar tasks; comentar para evitar duplicación
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(host="0.0.0.0", port=port, debug=debug)

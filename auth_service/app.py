@@ -12,18 +12,21 @@ import io
 import base64
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
+CORS(app, origins=os.environ.get('CORS_ORIGINS', 'http://localhost:4200').split(','), supports_credentials=True)
 
 # Configuración
-import os
-SECRET_KEY = os.environ.get('SECRET_KEY', 'miclavesecreta123')
-
+SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
 # Configuración MongoDB
-import os
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/auth_service_db')
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client.get_database('auth_service_db')
+from urllib.parse import urlparse
+def _extract_db_name(uri: str, default_name: str) -> str:
+    parsed = urlparse(uri)
+    path = parsed.path.lstrip('/')
+    return path.split('/')[0] if path else default_name
+DB_NAME = os.environ.get('MONGO_DB_NAME', _extract_db_name(MONGO_URI, 'auth_service_db'))
+mongo_db = mongo_client[DB_NAME]
 users_collection = mongo_db['users']
 
 # Configurar logging
@@ -235,19 +238,17 @@ def verify():
         logger.error(f"Error en verificación: {str(e)}")
         return jsonify({'error': 'Error interno del servidor'}), 500
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({'service': 'Auth Service', 'health': '/health'}), 200
+
 @app.route('/health', methods=['GET'])
-def health():
-    return jsonify({
-        'status': 'Auth Service is running',
-        'mfa_enabled': True
-    })
 @app.route('/healthz', methods=['GET'])
-def healthz():
-    return jsonify({
-        'status': 'Auth Service is running',
-        'mfa_enabled': True
-    })
+def health():
+    return jsonify({'status': 'Auth Service is running', 'mfa_enabled': True, 'db': DB_NAME})
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5001))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(host='0.0.0.0', port=port, debug=debug)
