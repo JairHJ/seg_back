@@ -11,10 +11,12 @@ CORS(app)
 
 SECRET_KEY = "miclavesecreta123"
 
+
 # Conexión a MongoDB
-MONGO_URI = 'mongodb://localhost:27017/'
+import os
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client['task_service_db']
+mongo_db = mongo_client.get_database('task_service_db')
 tasks_collection = mongo_db['tasks']
 
 def validate_date(date_str: str) -> bool:
@@ -350,6 +352,12 @@ def enable_task(task_id):
                 "data": None
             }
         })
+
+
+@app.route('/health', methods=['GET'])
+@app.route('/healthz', methods=['GET'])
+def health():
+    return jsonify({'status': 'Task Service is running'}), 200
 
 if __name__ == '__main__':
     init_db()

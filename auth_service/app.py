@@ -15,12 +15,15 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
 
 # Configuración
-SECRET_KEY = "miclavesecreta123"
+import os
+SECRET_KEY = os.environ.get('SECRET_KEY', 'miclavesecreta123')
+
 
 # Configuración MongoDB
-MONGO_URI = 'mongodb://localhost:27017/'  # Cambia si usas MongoDB Atlas
+import os
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client['auth_service_db']
+mongo_db = mongo_client.get_database('auth_service_db')
 users_collection = mongo_db['users']
 
 # Configurar logging
@@ -234,6 +237,12 @@ def verify():
 
 @app.route('/health', methods=['GET'])
 def health():
+    return jsonify({
+        'status': 'Auth Service is running',
+        'mfa_enabled': True
+    })
+@app.route('/healthz', methods=['GET'])
+def healthz():
     return jsonify({
         'status': 'Auth Service is running',
         'mfa_enabled': True

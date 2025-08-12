@@ -18,3 +18,15 @@
 127.0.0.1 - - [12/Aug/2025 13:45:14] "GET /tasks HTTP/1.1" 200 -
 127.0.0.1 - - [12/Aug/2025 13:45:16] "DELETE /delete_task/689b9997383360aa9485bef1 HTTP/1.1" 200 -
 127.0.0.1 - - [12/Aug/2025 13:45:20] "GET /tasks HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/task_service/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/task_service/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/task_service/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075

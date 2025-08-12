@@ -156,3 +156,26 @@
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+[ADVERTENCIA] flask-limiter no está instalado. El rate limit no está activo.
+ * Restarting with stat
+/home/giova/projects/fullstack/microservicios/venv/lib/python3.12/site-packages/flask_limiter/extension.py:324: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+/home/giova/projects/fullstack/microservicios/venv/lib/python3.12/site-packages/flask_limiter/extension.py:324: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+/home/giova/projects/fullstack/microservicios/venv/lib/python3.12/site-packages/flask_limiter/extension.py:324: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075

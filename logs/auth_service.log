@@ -26,3 +26,28 @@ INFO:werkzeug: * Debugger PIN: 754-858-075
   'updated_at': datetime.utcnow()
 INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 13:44:40] "[35m[1mPOST /register HTTP/1.1[0m" 201 -
 INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 13:45:05] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in '/home/giova/projects/fullstack/microservicios/auth_service/app.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Usuario admin creado: admin/admin123
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 754-858-075
+INFO:werkzeug: * Detected change in '/home/giova/projects/fullstack/microservicios/auth_service/app.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Usuario admin creado: admin/admin123
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 754-858-075
+INFO:werkzeug: * Detected change in '/home/giova/projects/fullstack/microservicios/auth_service/app.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Usuario admin creado: admin/admin123
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 754-858-075
+INFO:werkzeug: * Detected change in '/home/giova/projects/fullstack/microservicios/auth_service/app.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Usuario admin creado: admin/admin123
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 754-858-075
+INFO:werkzeug: * Detected change in '/home/giova/projects/fullstack/microservicios/auth_service/app.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:__main__:Usuario admin creado: admin/admin123
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 754-858-075

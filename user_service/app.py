@@ -1,5 +1,10 @@
 import jwt
-SECRET_KEY = 'miclavesecreta123'
+import os
+from flask import Flask, jsonify, request
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'miclavesecreta123')
 
 def token_required(f):
     from functools import wraps
@@ -21,19 +26,13 @@ def token_required(f):
         return f(*args, **kwargs)
     return wraps(f)(decorated)
 
-from flask import Flask, jsonify, request
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-
-
 app = Flask(__name__)
 
 # Conexión a MongoDB
-MONGO_URI = 'mongodb://localhost:27017/'
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 mongo_client = MongoClient(MONGO_URI)
-mongo_db = mongo_client['user_service_db']
+mongo_db = mongo_client.get_database('user_service_db')
 users_collection = mongo_db['users']
-
 
 @app.route('/users', methods=['GET'])
 @token_required
@@ -43,7 +42,6 @@ def get_users():
         user['id'] = str(user['_id'])
         user.pop('_id', None)
     return jsonify({"users": users})
-
 
 @app.route('/users/<user_id>', methods=['GET'])
 @token_required
@@ -57,7 +55,6 @@ def get_user(user_id):
         return jsonify({"user": user})
     except Exception:
         return jsonify({"error": "ID inválido"}), 400
-
 
 @app.route('/users', methods=['POST'])
 @token_required
@@ -78,7 +75,6 @@ def create_user():
     result = users_collection.insert_one(new_user)
     new_user['id'] = str(result.inserted_id)
     return jsonify({"message": "Usuario creado con éxito!", "user": new_user}), 201
-
 
 @app.route('/users/<user_id>', methods=['PUT'])
 @token_required
@@ -103,7 +99,6 @@ def update_user(user_id):
     except Exception:
         return jsonify({"error": "ID inválido"}), 400
 
-
 @app.route('/users/<user_id>', methods=['DELETE'])
 @token_required
 def delete_user(user_id):
@@ -116,5 +111,10 @@ def delete_user(user_id):
     except Exception:
         return jsonify({"error": "ID inválido"}), 400
 
+@app.route('/health', methods=['GET'])
+@app.route('/healthz', methods=['GET'])
+def health():
+    return jsonify({'status': 'User Service is running'}), 200
+
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port=5002, debug=True)
+    app.run(host="0.0.0.0", port=5002, debug=True)
