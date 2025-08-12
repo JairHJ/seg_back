@@ -12,7 +12,24 @@ import io
 import base64
 
 app = Flask(__name__)
-CORS(app, origins=os.environ.get('CORS_ORIGINS', 'http://localhost:4200').split(','), supports_credentials=True)
+
+# Configuración de CORS: permite definir múltiples orígenes en la variable de entorno CORS_ORIGINS
+# Si no está definida, habilitamos localhost y el dominio de producción por defecto.
+origins_env = os.environ.get('CORS_ORIGINS')
+if origins_env:
+    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+else:
+    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+
+CORS(
+    app,
+    origins=_origins,
+    supports_credentials=True,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=600
+)
 
 # Configuración
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
