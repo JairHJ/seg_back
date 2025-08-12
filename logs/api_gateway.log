@@ -1,0 +1,158 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 13:16:00] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:00] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:01] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:01] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:49] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:49] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:49] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:49] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:53] "OPTIONS /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:53] "GET /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:58] "OPTIONS /task/tasks/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:16:59] "GET /task/tasks/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:19:59] "OPTIONS /task/tasks/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:19:59] "GET /task/tasks/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:06] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:06] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:06] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:06] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:34] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:34] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:34] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:35] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:44] "OPTIONS /task/register_task HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:45] "POST /task/register_task HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:46] "OPTIONS /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:46] "GET /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:49] "OPTIONS /task/delete_task/689b940d383360aa9485bef0 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:49] "DELETE /task/delete_task/689b940d383360aa9485bef0 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:58] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:59] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:59] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:20:59] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:25:33] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:25:33] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:25:33] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:25:33] "GET /logs/summary HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 13:27:35] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:27:35] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:27:35] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:27:35] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:30:51] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:30:51] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:30:52] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:30:52] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:31:26] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:31:27] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:31:27] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:31:27] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:33:49] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:33:49] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:33:49] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:33:49] "GET /logs/all HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 13:34:49] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:34:49] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:34:49] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:34:49] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:45] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:45] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:45] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:45] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:59] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:59] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:59] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:36:59] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:22] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:22] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:22] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:22] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:46] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:46] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:46] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:38:46] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:24] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:24] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:24] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:24] "GET /logs/summary HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 13:39:47] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:47] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:47] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:47] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:48] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:39:48] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:37] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:37] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:41] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:41] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:57] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:57] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:57] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:40:58] "GET /logs/all HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
+127.0.0.1 - - [12/Aug/2025 13:41:08] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:41:08] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:41:08] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:41:08] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:42:12] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:42:12] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:42:12] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:42:12] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:43:06] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:43:06] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:43:06] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:43:06] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:00] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:01] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:01] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:01] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:23] "OPTIONS /task/register_task HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:23] "POST /task/register_task HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:40] "OPTIONS /auth/register HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:44:40] "POST /auth/register HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:05] "OPTIONS /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:05] "POST /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:05] "OPTIONS /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:05] "GET /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:09] "OPTIONS /task/delete_task/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:09] "DELETE /task/delete_task/689b9195a0b04a491482e3d3 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:09] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:10] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:10] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:10] "GET /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:14] "OPTIONS /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:14] "GET /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:15] "OPTIONS /task/delete_task/689b9997383360aa9485bef1 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:16] "DELETE /task/delete_task/689b9997383360aa9485bef1 HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:19] "OPTIONS /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:45:20] "GET /task/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:58:18] "OPTIONS /logs/all HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:58:18] "OPTIONS /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:58:18] "GET /logs/summary HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2025 13:58:18] "GET /logs/all HTTP/1.1" 200 -
+ * Detected change in '/home/giova/projects/fullstack/microservicios/api_gateway/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 754-858-075
