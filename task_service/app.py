@@ -39,6 +39,27 @@ CORS(
     max_age=600
 )
 
+@app.after_request
+def ensure_cors_headers(resp):
+    origin = request.headers.get('Origin')
+    if not origin:
+        return resp
+    allowed = False
+    for o in _origins:
+        if hasattr(o, 'match') and o.match(origin):
+            allowed = True
+            break
+        if o == origin:
+            allowed = True
+            break
+    if allowed:
+        resp.headers['Access-Control-Allow-Origin'] = origin
+        resp.headers['Vary'] = 'Origin'
+        resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
+        resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    return resp
+
 # Rate limiting general para el servicio de tareas (protege de abuso masivo)
 limiter = Limiter(get_remote_address, app=app, default_limits=["1000 per day", "300 per hour"])
 

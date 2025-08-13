@@ -38,6 +38,27 @@ CORS(
     max_age=600
 )
 
+@app.after_request
+def ensure_cors_headers(resp):
+    origin = request.headers.get('Origin')
+    if not origin:
+        return resp
+    allowed = False
+    for o in _origins:
+        if hasattr(o, 'match') and o.match(origin):
+            allowed = True
+            break
+        if o == origin:
+            allowed = True
+            break
+    if allowed:
+        resp.headers['Access-Control-Allow-Origin'] = origin
+        resp.headers['Vary'] = 'Origin'
+        resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
+        resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    return resp
+
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
 # Conexión a MongoDB (API Gateway podría guardar logs u otra metadata)

@@ -49,6 +49,32 @@ CORS(
     max_age=600
 )
 
+# Fallback manual para asegurarnos que siempre se incluyan cabeceras CORS cuando el origen matchea
+@app.after_request
+def ensure_cors_headers(resp):
+    try:
+        origin = request.headers.get('Origin')
+        if not origin:
+            return resp
+        # Verificar contra lista de orígenes (_origins) que puede contener strings o patrones regex
+        allowed = False
+        for o in _origins:
+            if hasattr(o, 'match') and o.match(origin):
+                allowed = True
+                break
+            if o == origin:
+                allowed = True
+                break
+        if allowed:
+            resp.headers['Access-Control-Allow-Origin'] = origin
+            resp.headers['Vary'] = 'Origin'
+            resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
+            resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    except Exception as e:
+        logger.debug(f"Error en ensure_cors_headers: {e}")
+    return resp
+
 # Rate Limiting (previene abuso de endpoints críticos)
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
