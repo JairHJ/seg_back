@@ -189,8 +189,10 @@ def get_task_by_id(task_id):
 @app.route('/register_task', methods=['POST'])
 @token_required
 def create_task():
-    data = request.get_json()
-    required_fields = ['name', 'description', 'created_at', 'dead_line', 'status', 'is_alive', 'created_by']
+    # silent=True para evitar 400 HTML automático cuando Content-Type es JSON pero body vacío
+    data = request.get_json(silent=True) or {}
+    # 'created_by' ahora se obtiene del token (request.user['username']) y no es obligatorio en el body
+    required_fields = ['name', 'description', 'created_at', 'dead_line', 'status', 'is_alive']
 
     if not all(field in data for field in required_fields):
         return jsonify({
@@ -220,6 +222,7 @@ def create_task():
         })
 
     try:
+        created_by = getattr(request, 'user', {}).get('username') if hasattr(request, 'user') else None
         tasks_collection.insert_one({
             'name': data['name'],
             'description': data['description'],
@@ -227,7 +230,7 @@ def create_task():
             'dead_line': data['dead_line'],
             'status': data['status'],
             'is_alive': data['is_alive'],
-            'created_by': data['created_by']
+            'created_by': created_by or data.get('created_by') or 'unknown'
         })
         return jsonify({
             "statusCode": 201,
@@ -249,8 +252,9 @@ def create_task():
 @app.route('/update_task/<task_id>', methods=['PUT'])
 @token_required
 def update_task(task_id):
-    data = request.get_json()
-    required_fields = ['name', 'description', 'created_at', 'dead_line', 'status', 'is_alive', 'created_by']
+    data = request.get_json(silent=True) or {}
+    # Igual que create: created_by se toma del token
+    required_fields = ['name', 'description', 'created_at', 'dead_line', 'status', 'is_alive']
 
     if not all(field in data for field in required_fields):
         return jsonify({
@@ -280,6 +284,7 @@ def update_task(task_id):
         })
 
     try:
+        created_by = getattr(request, 'user', {}).get('username') if hasattr(request, 'user') else None
         result = tasks_collection.update_one(
             {'_id': ObjectId(task_id)},
             {'$set': {
@@ -289,7 +294,7 @@ def update_task(task_id):
                 'dead_line': data['dead_line'],
                 'status': data['status'],
                 'is_alive': data['is_alive'],
-                'created_by': data['created_by']
+                'created_by': created_by or data.get('created_by') or 'unknown'
             }}
         )
         if result.matched_count == 0:

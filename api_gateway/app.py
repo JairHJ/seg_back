@@ -334,6 +334,20 @@ def proxy_tasks(path):
         upstream_path = '/tasks' + ('/' + suffix if suffix else '')
     qs = request.query_string.decode()
     target = TASK_SERVICE_URL.rstrip('/') + upstream_path + (('?' + qs) if qs else '')
+    # Preparar body (replicando lógica de _forward para soportar JSON/Form-data)
+    json_payload = None
+    data_payload = None
+    files_payload = None
+    if method in ['POST', 'PUT', 'PATCH']:
+        ct = request.headers.get('Content-Type', '').lower()
+        if request.files:
+            files_payload = {f: (fobj.filename, fobj.stream, fobj.mimetype) for f, fobj in request.files.items()}
+            data_payload = request.form.to_dict(flat=True)
+        elif 'application/json' in ct:
+            # silent=True evita que Flask genere HTML 400 y nos deja reenviar aunque sea None
+            json_payload = request.get_json(silent=True)
+        else:
+            data_payload = request.get_data()
     try:
         fwd_headers = _filtered_headers()
         fwd_headers['Accept-Encoding'] = 'gzip, deflate, br'
@@ -341,6 +355,9 @@ def proxy_tasks(path):
             method=method,
             url=target,
             headers=fwd_headers,
+            data=None if (files_payload or json_payload is not None) else data_payload,
+            json=json_payload,
+            files=files_payload,
             timeout=FORWARD_TIMEOUT
         )
         excluded = {'transfer-encoding', 'connection', 'keep-alive'}
