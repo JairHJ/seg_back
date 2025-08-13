@@ -15,6 +15,13 @@ from urllib.parse import urlparse
 
 app = Flask(__name__)
 
+# Asegurar que Flask respete encabezados X-Forwarded-* (evita redirects http en entorno detrás de proxy/CDN)
+try:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
+except Exception:
+    pass
+
 # Configuración de CORS unificada
 origins_env = os.environ.get('CORS_ORIGINS')
 if origins_env:
@@ -308,38 +315,25 @@ def proxy_user(path):
 # Task Service proxy (incluye variantes /task y /tasks)
 @app.route('/tasks', defaults={'path': ''}, methods=['GET','POST','PUT','DELETE','OPTIONS'])
 @app.route('/tasks/<path:path>', methods=['GET','POST','PUT','DELETE','OPTIONS'])
-@app.route('/task', defaults={'path': ''}, methods=['GET','POST','PUT','DELETE','OPTIONS'])
-@app.route('/task/<path:path>', methods=['GET','POST','PUT','DELETE','OPTIONS'])
 def proxy_tasks(path):
-    # Mapeo especial porque el microservicio mezcla rutas /tasks y rutas raíz (register_task, update_task, etc.)
-    # Reglas:
-    #  GET /tasks                -> upstream /tasks
-    #  GET /tasks/<id>           -> upstream /tasks/<id>
-    #  /tasks/register_task      -> upstream /register_task (raíz)
-    #  /tasks/update_task/<id>   -> upstream /update_task/<id>
-    #  variantes delete/enable/disable igual.
+    """Proxy seguro para Task Service sin redirecciones involuntarias.
+    Mapea operaciones especiales (register_task, update_task/...) al root upstream.
+    """
     suffix = path or ''
     method = request.method
-    root_ops = ('register_task', 'update_task', 'delete_task', 'disable_task', 'enable_task')
-    # Detectar ObjectId (24 hex) para GET individual
     import re as _re
+    root_ops = ('register_task', 'update_task', 'delete_task', 'disable_task', 'enable_task')
     is_object_id = bool(suffix and _re.fullmatch(r'[0-9a-fA-F]{24}', suffix))
-    if suffix == '' and method == 'GET':
+    if method == 'GET' and suffix == '':
         upstream_path = '/tasks'
-    elif is_object_id and method == 'GET':
+    elif method == 'GET' and is_object_id:
         upstream_path = f'/tasks/{suffix}'
+    elif any(suffix.startswith(op) for op in root_ops):
+        upstream_path = '/' + suffix
     else:
-        # Comprobar si comienza con alguna operación raíz
-        if any(suffix.startswith(op) for op in root_ops):
-            upstream_path = '/' + suffix  # raíz
-        else:
-            # Cualquier otro caso lo consideramos relativo a /tasks
-            upstream_path = '/tasks' + ('/' + suffix if suffix else '')
-    # Construir target conservando query
+        upstream_path = '/tasks' + ('/' + suffix if suffix else '')
     qs = request.query_string.decode()
-    target = TASK_SERVICE_URL.rstrip('/') + upstream_path
-    if qs:
-        target += '?' + qs
+    target = TASK_SERVICE_URL.rstrip('/') + upstream_path + (('?' + qs) if qs else '')
     try:
         fwd_headers = _filtered_headers()
         fwd_headers['Accept-Encoding'] = 'gzip, deflate, br'
