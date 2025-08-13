@@ -168,7 +168,7 @@ def _start_timer():
 def _log_request(resp):
     try:
         # Evitar logging interno de favicon o estáticos si los hubiera
-        if request.method == 'OPTIONS' or request.path.startswith('/health') or request.path.startswith('/logs'):
+        if request.method == 'OPTIONS' or request.path.startswith('/health') or request.path.startswith('/logs') or request.path in ('/favicon.ico','/'):
             return resp
         duration_ms = int((time.time() - getattr(g, '_start_time', time.time())) * 1000)
         api_name = request.path.strip('/').split('/')[0] or 'root'
@@ -372,7 +372,9 @@ def proxy_tasks(path):
 @app.route('/logs/summary', methods=['GET'])
 def logs_summary():
     try:
-        total = logs_collection.count_documents({})
+        excluded = {'root', 'favicon.ico'}
+        base_filter = {'api_name': {'$nin': list(excluded)}}
+        total = logs_collection.count_documents(base_filter)
 
         if total == 0:
             return jsonify({
@@ -384,40 +386,37 @@ def logs_summary():
                 'fastest_api': None,
                 'slowest_api': None,
                 'most_used_api': None,
-                'least_used_api': None
+                'least_used_api': None,
+                'excluded_apis': list(excluded)
             })
 
-        # Aggregate status counts
         status_counts = {str(item['_id']): item['count'] for item in logs_collection.aggregate([
+            {'$match': base_filter},
             {'$group': {'_id': '$status_code', 'count': {'$sum': 1}}}
         ])}
 
-        # Per API aggregation (count & avg duration)
         per_api_raw = list(logs_collection.aggregate([
+            {'$match': base_filter},
             {'$group': {
                 '_id': '$api_name',
                 'count': {'$sum': 1},
                 'avg_duration_ms': {'$avg': '$duration_ms'}
             }}
         ]))
-        per_api = {}
-        for item in per_api_raw:
-            per_api[item['_id']] = {
+        per_api = {
+            item['_id']: {
                 'count': item['count'],
                 'avg_duration_ms': round(item['avg_duration_ms'], 2)
-            }
+            } for item in per_api_raw
+        }
 
-        # Overall average duration
         avg_duration_doc = next(logs_collection.aggregate([
+            {'$match': base_filter},
             {'$group': {'_id': None, 'avg': {'$avg': '$duration_ms'}}}
         ]), {'avg': 0})
         avg_duration_ms = round(avg_duration_doc.get('avg', 0), 2)
 
-        # Derive fastest/slowest & most/least used
-        fastest_api = None
-        slowest_api = None
-        most_used_api = None
-        least_used_api = None
+        fastest_api = slowest_api = most_used_api = least_used_api = None
         if per_api:
             fastest_api = min(per_api.items(), key=lambda x: x[1]['avg_duration_ms'])[0]
             slowest_api = max(per_api.items(), key=lambda x: x[1]['avg_duration_ms'])[0]
@@ -435,7 +434,8 @@ def logs_summary():
             'fastest_api': fastest_api,
             'slowest_api': slowest_api,
             'most_used_api': most_used_api,
-            'least_used_api': least_used_api
+            'least_used_api': least_used_api,
+            'excluded_apis': list(excluded)
         })
     except Exception as e:
         return jsonify({'error': 'Error obteniendo summary', 'detail': str(e)}), 500
