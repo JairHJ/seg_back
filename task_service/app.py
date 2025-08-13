@@ -60,7 +60,7 @@ if ENABLE_DIRECT_SERVICE_CORS:
         return resp
 
 # Rate limiting general para el servicio de tareas (protege de abuso masivo)
-limiter = Limiter(get_remote_address, app=app, default_limits=["1000 per day", "300 per hour"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "10 per hour"])
 
 # Usa variable de entorno SECRET_KEY en producción. Define una por despliegue.
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-prod")

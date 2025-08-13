@@ -81,7 +81,7 @@ if ENABLE_DIRECT_SERVICE_CORS:
         return resp
 
 # Rate limiting básico
-limiter = Limiter(get_remote_address, app=app, default_limits=["500 per day", "100 per hour"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "10 per hour"])
 
 # Conexión a MongoDB
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/user_service_db')

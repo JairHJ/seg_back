@@ -508,32 +508,77 @@ def root():
 def health():
     return jsonify({'status': 'API Gateway running', 'db': DB_NAME}), 200
 
-# --- Rate limiting simple en memoria (demo) ---
+"""Rate limiting simple en memoria mejorado.
+Características:
+ - Configurable por variables de entorno.
+ - Límite distinto para User-Agent que contenga 'ZAP'.
+ - Excluye paths no críticos (/health, /healthz, /logs/*, /favicon.ico, /) del conteo.
+ - Añade cabeceras X-RateLimit-* y Retry-After en 429.
+NOTA: Diseño de demostración; para producción usar backend distribuido (Redis, etc.).
+"""
 _rate_lock = threading.Lock()
-_rate_buckets: dict[str, deque] = defaultdict(deque)
-RATE_LIMIT_REQUESTS = int(os.environ.get('GATEWAY_RATE_LIMIT_REQUESTS', '100'))
-RATE_LIMIT_WINDOW_SEC = int(os.environ.get('GATEWAY_RATE_LIMIT_WINDOW', '1'))
+_rate_buckets: dict[str, deque] = defaultdict(deque)  # por IP
+
+def _rl_conf():
+    base_limit = int(os.environ.get('GATEWAY_RATE_LIMIT_REQUESTS', '100'))
+    base_window = int(os.environ.get('GATEWAY_RATE_LIMIT_WINDOW', '1'))
+    zap_limit = int(os.environ.get('GATEWAY_RATE_LIMIT_REQUESTS_ZAP', str(base_limit // 2 or 1)))
+    zap_window = int(os.environ.get('GATEWAY_RATE_LIMIT_WINDOW_ZAP', str(base_window)))
+    return base_limit, base_window, zap_limit, zap_window
 
 @app.before_request
 def _gateway_rate_limit():
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr) or 'unknown'
+    # Paths excluidos del conteo (pero sí pueden responder normal)
+    if request.path in ('/','/favicon.ico') or request.path.startswith('/health') or request.path.startswith('/logs'):
+        return
+    ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or 'unknown').split(',')[0].strip()
+    ua = (request.headers.get('User-Agent') or '').lower()
+    base_limit, base_window, zap_limit, zap_window = _rl_conf()
+    limit = zap_limit if 'zap' in ua else base_limit
+    window = zap_window if 'zap' in ua else base_window
     now = time.time()
     with _rate_lock:
         q = _rate_buckets[ip]
-        # purge old
-        while q and now - q[0] > RATE_LIMIT_WINDOW_SEC:
+        # Eliminar timestamps fuera de la ventana
+        while q and now - q[0] > window:
             q.popleft()
-        if len(q) >= RATE_LIMIT_REQUESTS:
-            return jsonify({
+        # Estado para after_request
+        remaining = max(limit - len(q), 0)
+        request.rate_limit_info = {
+            'limit': limit,
+            'window': window,
+            'remaining_before': remaining
+        }
+        if len(q) >= limit:
+            retry_after = max(1, int(window - (now - q[0]))) if q else window
+            resp = jsonify({
                 'statusCode': 429,
                 'intData': {
                     'message': 'Rate limit excedido. Intenta nuevamente más tarde.',
                     'data': None,
-                    'limit': RATE_LIMIT_REQUESTS,
-                    'window_seconds': RATE_LIMIT_WINDOW_SEC
+                    'limit': limit,
+                    'window_seconds': window,
+                    'remaining': 0
                 }
-            }), 429
+            })
+            resp.status_code = 429
+            resp.headers['Retry-After'] = str(retry_after)
+            resp.headers['X-RateLimit-Limit'] = str(limit)
+            resp.headers['X-RateLimit-Remaining'] = '0'
+            resp.headers['X-RateLimit-Window-Seconds'] = str(window)
+            return resp
         q.append(now)
+        # Actualizar remaining post aceptación
+        request.rate_limit_info['remaining_after'] = max(limit - len(q), 0)
+
+@app.after_request
+def _rate_limit_headers(resp):
+    info = getattr(request, 'rate_limit_info', None)
+    if info and resp.status_code != 429:
+        resp.headers.setdefault('X-RateLimit-Limit', str(info['limit']))
+        resp.headers.setdefault('X-RateLimit-Remaining', str(info.get('remaining_after', info['remaining_before'])))
+        resp.headers.setdefault('X-RateLimit-Window-Seconds', str(info['window']))
+    return resp
 
 if __name__ == '__main__':
     ensure_indexes()

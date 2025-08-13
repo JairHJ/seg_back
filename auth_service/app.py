@@ -77,7 +77,7 @@ if ENABLE_DIRECT_SERVICE_CORS:
 ## (Logging interno removido para evitar duplicados; se confía en el API Gateway)
 
 # Rate Limiting (previene abuso de endpoints críticos)
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "10 per hour"])
 
 # Configuración
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
