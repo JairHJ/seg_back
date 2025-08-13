@@ -12,6 +12,8 @@ import os
 import re
 import random
 from urllib.parse import urlparse
+from collections import defaultdict, deque
+import threading
 
 app = Flask(__name__)
 
@@ -505,6 +507,33 @@ def root():
 @app.route('/healthz', methods=['GET'])
 def health():
     return jsonify({'status': 'API Gateway running', 'db': DB_NAME}), 200
+
+# --- Rate limiting simple en memoria (demo) ---
+_rate_lock = threading.Lock()
+_rate_buckets: dict[str, deque] = defaultdict(deque)
+RATE_LIMIT_REQUESTS = int(os.environ.get('GATEWAY_RATE_LIMIT_REQUESTS', '100'))
+RATE_LIMIT_WINDOW_SEC = int(os.environ.get('GATEWAY_RATE_LIMIT_WINDOW', '1'))
+
+@app.before_request
+def _gateway_rate_limit():
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr) or 'unknown'
+    now = time.time()
+    with _rate_lock:
+        q = _rate_buckets[ip]
+        # purge old
+        while q and now - q[0] > RATE_LIMIT_WINDOW_SEC:
+            q.popleft()
+        if len(q) >= RATE_LIMIT_REQUESTS:
+            return jsonify({
+                'statusCode': 429,
+                'intData': {
+                    'message': 'Rate limit excedido. Intenta nuevamente más tarde.',
+                    'data': None,
+                    'limit': RATE_LIMIT_REQUESTS,
+                    'window_seconds': RATE_LIMIT_WINDOW_SEC
+                }
+            }), 429
+        q.append(now)
 
 if __name__ == '__main__':
     ensure_indexes()
