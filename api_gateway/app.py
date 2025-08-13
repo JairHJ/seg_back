@@ -248,16 +248,24 @@ def _forward(base_url: str, prefix: str, path: str):
         else:
             data = request.get_data()
     try:
+        # Debug: loggear upstream configurado (solo si DEBUG_UPSTREAMS=1 para no inundar logs)
+        if os.environ.get('DEBUG_UPSTREAMS', '0') == '1':
+            app.logger.info(f"[PROXY] Forward -> base={base_url} target={target} method={request.method}")
+        # Forzar a upstream a enviar respuesta sin compresión compleja si es posible (identity)
+        fwd_headers = _filtered_headers()
+        # Sobrescribir Accept-Encoding para simplificar (el navegador se encargará luego si dejamos content-encoding pasar)
+        fwd_headers['Accept-Encoding'] = 'gzip, deflate, br'
         resp = requests.request(
             method=request.method,
             url=target,
-            headers=_filtered_headers(),
+            headers=fwd_headers,
             data=None if (files or json_payload is not None) else data,
             json=json_payload,
             files=files,
             timeout=FORWARD_TIMEOUT
         )
-        excluded = {'content-encoding', 'transfer-encoding', 'connection', 'keep-alive'}
+        # Ya no excluimos 'content-encoding' para que el navegador pueda descomprimir.
+        excluded = {'transfer-encoding', 'connection', 'keep-alive'}
         headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded]
         return Response(resp.content, status=resp.status_code, headers=headers)
     except requests.exceptions.ConnectTimeout:
