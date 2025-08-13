@@ -6,6 +6,7 @@ import datetime
 import time
 import jwt
 import requests
+import uuid
 from functools import wraps
 import os
 import re
@@ -152,13 +153,41 @@ def _log_request(resp):
         api_name = request.path.strip('/').split('/')[0] or 'root'
         doc = {
             'timestamp': datetime.datetime.utcnow(),
+            'request_id': str(uuid.uuid4()),
             'method': request.method,
             'path': request.path,
             'api_name': api_name,
             'status_code': resp.status_code,
             'duration_ms': duration_ms,
-            'ip': request.headers.get('X-Forwarded-For', request.remote_addr)
+            'ip': request.headers.get('X-Forwarded-For', request.remote_addr),
+            'error': resp.status_code >= 400
         }
+        # Añadir upstream resolviendo según api_name principal
+        upstream_map = {
+            'auth': AUTH_SERVICE_URL,
+            'user': USER_SERVICE_URL,
+            'tasks': TASK_SERVICE_URL,
+            'task': TASK_SERVICE_URL
+        }
+        if api_name in upstream_map:
+            doc['upstream'] = upstream_map[api_name]
+        # Intentar extraer usuario del JWT (best-effort)
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            try:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                # Campos estándar definidos en auth_service
+                if 'user_id' in payload:
+                    doc['user_id'] = payload['user_id']
+                if 'username' in payload:
+                    doc['username'] = payload['username']
+                if 'permission' in payload:
+                    doc['permission'] = payload['permission']
+                if 'role' in payload:
+                    doc['role'] = payload['role']
+            except Exception:
+                pass
         logs_collection.insert_one(doc)
     except Exception:
         pass

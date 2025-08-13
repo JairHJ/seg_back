@@ -32,54 +32,53 @@ def token_required(f):
 
 app = Flask(__name__)
 
-# CORS unificado
-origins_env = os.environ.get('CORS_ORIGINS')
-if origins_env:
-    raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
-else:
-    raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
-
-_origins = []
-for o in raw_origins:
-    if o.lower().startswith('regex:'):
-        try:
-            _origins.append(re.compile(o[6:]))
-        except re.error:
-            pass
+# CORS opcional (principal manejo en API Gateway). Activar sólo si ENABLE_DIRECT_SERVICE_CORS=1
+ENABLE_DIRECT_SERVICE_CORS = os.environ.get('ENABLE_DIRECT_SERVICE_CORS', '0') == '1'
+if ENABLE_DIRECT_SERVICE_CORS:
+    origins_env = os.environ.get('CORS_ORIGINS')
+    if origins_env:
+        raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
     else:
-        _origins.append(o)
-
-from flask_cors import CORS as _CORS
-_CORS(
-    app,
-    origins=_origins,
-    supports_credentials=True,
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Content-Type"],
-    max_age=600
-)
-
-@app.after_request
-def ensure_cors_headers(resp):
-    origin = request.headers.get('Origin')
-    if not origin:
+        raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
+    _origins = []
+    for o in raw_origins:
+        if o.lower().startswith('regex:'):
+            try:
+                _origins.append(re.compile(o[6:]))
+            except re.error:
+                pass
+        else:
+            _origins.append(o)
+    from flask_cors import CORS as _CORS
+    _CORS(
+        app,
+        origins=_origins,
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Type"],
+        max_age=600
+    )
+    @app.after_request
+    def ensure_cors_headers(resp):
+        origin = request.headers.get('Origin')
+        if not origin:
+            return resp
+        allowed = False
+        for o in _origins:
+            if hasattr(o, 'match') and o.match(origin):
+                allowed = True
+                break
+            if o == origin:
+                allowed = True
+                break
+        if allowed:
+            resp.headers['Access-Control-Allow-Origin'] = origin
+            resp.headers['Vary'] = 'Origin'
+            resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
+            resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         return resp
-    allowed = False
-    for o in _origins:
-        if hasattr(o, 'match') and o.match(origin):
-            allowed = True
-            break
-        if o == origin:
-            allowed = True
-            break
-    if allowed:
-        resp.headers['Access-Control-Allow-Origin'] = origin
-        resp.headers['Vary'] = 'Origin'
-        resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
-        resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    return resp
 
 # Rate limiting básico
 limiter = Limiter(get_remote_address, app=app, default_limits=["500 per day", "100 per hour"])

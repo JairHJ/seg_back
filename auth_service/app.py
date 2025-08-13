@@ -14,66 +14,67 @@ import io
 import base64
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import time
 
 app = Flask(__name__)
 
-# Configuración de CORS: permite definir múltiples orígenes en la variable de entorno CORS_ORIGINS
-# Si no está definida, habilitamos localhost y el dominio de producción por defecto.
-origins_env = os.environ.get('CORS_ORIGINS')
-if origins_env:
-    raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
-else:
-    # Incluimos un regex por defecto para subdominios de vercel de este proyecto
-    raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
-
-# Soporte de patrones: si un origen empieza con 'regex:' lo convertimos a regex compilado
-_origins = []
-for o in raw_origins:
-    if o.lower().startswith('regex:'):
-        try:
-            pattern = o[6:]
-            _origins.append(re.compile(pattern))
-        except re.error:
-            # Si regex inválido lo ignoramos (o podríamos loggear)
-            pass
+# ================= CORS (Opcional en servicios internos) =================
+# Estos microservicios se consumen preferentemente a través del API Gateway.
+# Para evitar duplicación y lógica innecesaria, sólo habilitamos CORS directo
+# si la variable ENABLE_DIRECT_SERVICE_CORS=1 (útil en desarrollo cuando el
+# frontend llama directo a cada servicio). En producción normal se confía en el gateway.
+ENABLE_DIRECT_SERVICE_CORS = os.environ.get('ENABLE_DIRECT_SERVICE_CORS', '0') == '1'
+if ENABLE_DIRECT_SERVICE_CORS:
+    origins_env = os.environ.get('CORS_ORIGINS')
+    if origins_env:
+        raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
     else:
-        _origins.append(o)
+        raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
+    _origins = []
+    for o in raw_origins:
+        if o.lower().startswith('regex:'):
+            try:
+                pattern = o[6:]
+                _origins.append(re.compile(pattern))
+            except re.error:
+                pass
+        else:
+            _origins.append(o)
+    CORS(
+        app,
+        origins=_origins,
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Type"],
+        max_age=600
+    )
 
-CORS(
-    app,
-    origins=_origins,
-    supports_credentials=True,
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Content-Type"],
-    max_age=600
-)
+    @app.after_request
+    def ensure_cors_headers(resp):
+        try:
+            origin = request.headers.get('Origin')
+            if not origin:
+                return resp
+            allowed = False
+            for o in _origins:
+                if hasattr(o, 'match') and o.match(origin):
+                    allowed = True
+                    break
+                if o == origin:
+                    allowed = True
+                    break
+            if allowed:
+                resp.headers['Access-Control-Allow-Origin'] = origin
+                resp.headers['Vary'] = 'Origin'
+                resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
+                resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+                resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        except Exception as e:
+            logger.debug(f"Error en ensure_cors_headers: {e}")
+        return resp
 
-# Fallback manual para asegurarnos que siempre se incluyan cabeceras CORS cuando el origen matchea
-@app.after_request
-def ensure_cors_headers(resp):
-    try:
-        origin = request.headers.get('Origin')
-        if not origin:
-            return resp
-        # Verificar contra lista de orígenes (_origins) que puede contener strings o patrones regex
-        allowed = False
-        for o in _origins:
-            if hasattr(o, 'match') and o.match(origin):
-                allowed = True
-                break
-            if o == origin:
-                allowed = True
-                break
-        if allowed:
-            resp.headers['Access-Control-Allow-Origin'] = origin
-            resp.headers['Vary'] = 'Origin'
-            resp.headers.setdefault('Access-Control-Allow-Credentials', 'true')
-            resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    except Exception as e:
-        logger.debug(f"Error en ensure_cors_headers: {e}")
-    return resp
+## (Logging interno removido para evitar duplicados; se confía en el API Gateway)
 
 # Rate Limiting (previene abuso de endpoints críticos)
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
