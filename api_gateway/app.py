@@ -1,8 +1,9 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import datetime
+import time
 import jwt
 from functools import wraps
 import os
@@ -75,6 +76,7 @@ def _extract_db_name(uri: str, default_name: str) -> str:
 DB_NAME = os.environ.get('MONGO_DB_NAME', _extract_db_name(MONGO_URI, 'api_gateway_db'))
 mongo_db = mongo_client[DB_NAME]
 tasks_collection = mongo_db['tasks']  # Placeholder; ideal: gateway no duplique lógica de task service
+logs_collection = mongo_db['request_logs']
 
 def validate_date(date_str: str) -> bool:
     try:
@@ -127,6 +129,33 @@ def token_required(f):
 
 VALID_STATUSES = ['InProgress', 'Revision', 'Completed', 'Paused', 'Incomplete']
 
+# --- Request logging (simple) ---
+@app.before_request
+def _start_timer():
+    g._start_time = time.time()
+
+@app.after_request
+def _log_request(resp):
+    try:
+        # Evitar logging interno de favicon o estáticos si los hubiera
+        if request.path.startswith('/health') or request.path.startswith('/logs'):
+            return resp
+        duration_ms = int((time.time() - getattr(g, '_start_time', time.time())) * 1000)
+        api_name = request.path.strip('/').split('/')[0] or 'root'
+        doc = {
+            'timestamp': datetime.datetime.utcnow(),
+            'method': request.method,
+            'path': request.path,
+            'api_name': api_name,
+            'status_code': resp.status_code,
+            'duration_ms': duration_ms,
+            'ip': request.headers.get('X-Forwarded-For', request.remote_addr)
+        }
+        logs_collection.insert_one(doc)
+    except Exception:
+        pass
+    return resp
+
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     try:
@@ -151,6 +180,50 @@ def get_tasks():
                 "data": None
             }
         })
+
+# --- Logs Endpoints ---
+@app.route('/logs/summary', methods=['GET'])
+def logs_summary():
+    try:
+        total = logs_collection.count_documents({})
+        # Aggregate status counts
+        status_counts = {}
+        for item in logs_collection.aggregate([
+            {'$group': {'_id': '$status_code', 'count': {'$sum': 1}}}
+        ]):
+            status_counts[str(item['_id'])] = item['count']
+        # Aggregate api counts
+        api_counts = {}
+        for item in logs_collection.aggregate([
+            {'$group': {'_id': '$api_name', 'count': {'$sum': 1}}}
+        ]):
+            api_counts[item['_id']] = item['count']
+        return jsonify({
+            'total_logs': total,
+            'status_counts': status_counts,
+            'apis': api_counts
+        })
+    except Exception as e:
+        return jsonify({'error': 'Error obteniendo summary', 'detail': str(e)}), 500
+
+@app.route('/logs/all', methods=['GET'])
+def logs_all():
+    try:
+        cursor = logs_collection.find().sort('timestamp', -1).limit(200)
+        out = []
+        for doc in cursor:
+            out.append({
+                'id': str(doc.get('_id')),
+                'timestamp': doc.get('timestamp'),
+                'api_name': doc.get('api_name'),
+                'status_code': doc.get('status_code'),
+                'method': doc.get('method'),
+                'path': doc.get('path'),
+                'duration_ms': doc.get('duration_ms')
+            })
+        return jsonify(out)
+    except Exception as e:
+        return jsonify({'error': 'Error obteniendo logs', 'detail': str(e)}), 500
 
 # ...otros endpoints de tasks...
 
