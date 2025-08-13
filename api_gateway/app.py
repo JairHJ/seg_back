@@ -170,7 +170,10 @@ AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://localhost:5001')
 USER_SERVICE_URL = os.environ.get('USER_SERVICE_URL', 'http://localhost:5002')
 TASK_SERVICE_URL = os.environ.get('TASK_SERVICE_URL', 'http://localhost:5003')
 
-FORWARD_TIMEOUT = (5, 20)  # (connect, read)
+FORWARD_TIMEOUT = (
+    int(os.environ.get('UPSTREAM_CONNECT_TIMEOUT', '10')),
+    int(os.environ.get('UPSTREAM_READ_TIMEOUT', '30'))
+)  # (connect, read)
 
 def _build_target(base: str, prefix: str, path_suffix: str) -> str:
     # path_suffix ya viene sin el prefijo principal
@@ -189,30 +192,55 @@ def _filtered_headers():
 
 def _forward(base_url: str, prefix: str, path: str):
     target = _build_target(base_url, prefix, path)
+    json_payload = None
     data = None
     files = None
     if request.method in ['POST', 'PUT', 'PATCH']:
-        # Soporte JSON o form
+        ct = request.headers.get('Content-Type', '').lower()
         if request.files:
             files = {f: (fobj.filename, fobj.stream, fobj.mimetype) for f, fobj in request.files.items()}
             data = request.form.to_dict(flat=True)
+        elif 'application/json' in ct:
+            json_payload = request.get_json(silent=True)
         else:
-            # Pasar raw body (puede ser JSON)
             data = request.get_data()
     try:
         resp = requests.request(
             method=request.method,
             url=target,
             headers=_filtered_headers(),
-            data=None if files else data,
+            data=None if (files or json_payload is not None) else data,
+            json=json_payload,
             files=files,
             timeout=FORWARD_TIMEOUT
         )
         excluded = {'content-encoding', 'transfer-encoding', 'connection', 'keep-alive'}
         headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded]
         return Response(resp.content, status=resp.status_code, headers=headers)
+    except requests.exceptions.ConnectTimeout:
+        app.logger.warning(f"[PROXY] Connect timeout upstream={base_url} target={target}")
+        return jsonify({'error': 'Upstream timeout (connect)', 'upstream': base_url, 'target': target}), 504
+    except requests.exceptions.ReadTimeout:
+        app.logger.warning(f"[PROXY] Read timeout upstream={base_url} target={target}")
+        return jsonify({'error': 'Upstream timeout (read)', 'upstream': base_url, 'target': target}), 504
+    except requests.exceptions.ConnectionError as e:
+        app.logger.error(f"[PROXY] Connection error upstream={base_url} target={target} detail={e}")
+        return jsonify({'error': 'Upstream connection error', 'detail': str(e), 'upstream': base_url, 'target': target}), 502
     except requests.exceptions.RequestException as e:
-        return jsonify({'error': 'Upstream error', 'detail': str(e), 'upstream': base_url}), 502
+        app.logger.error(f"[PROXY] Generic upstream error upstream={base_url} target={target} detail={e}")
+        return jsonify({'error': 'Upstream error', 'detail': str(e), 'upstream': base_url, 'target': target}), 502
+
+# Debug endpoint (solo si DEBUG_UPSTREAMS=1) para inspeccionar URLs configuradas
+@app.route('/debug/upstreams', methods=['GET'])
+def debug_upstreams():
+    if os.environ.get('DEBUG_UPSTREAMS', '0') != '1':
+        return jsonify({'error': 'disabled'}), 403
+    return jsonify({
+        'auth': AUTH_SERVICE_URL,
+        'user': USER_SERVICE_URL,
+        'tasks': TASK_SERVICE_URL,
+        'timeouts': {'connect': FORWARD_TIMEOUT[0], 'read': FORWARD_TIMEOUT[1]}
+    })
 
 # Auth Service proxy
 @app.route('/auth', defaults={'path': ''}, methods=['GET','POST','PUT','DELETE','OPTIONS'])
