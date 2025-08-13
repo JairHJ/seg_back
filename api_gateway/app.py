@@ -20,7 +20,13 @@ origins_env = os.environ.get('CORS_ORIGINS')
 if origins_env:
     raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
 else:
-    raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
+    raw_origins = [
+        'http://localhost:4200',
+        'https://seg-front.vercel.app',
+        'regex:https://seg-front.*vercel.app',
+        # Permitir despliegues previos / previews con hash: seg-front-<buildId>.vercel.app
+        'regex:https://seg-front-[a-zA-Z0-9-]+\.vercel\.app'
+    ]
 
 _origins = []
 for o in raw_origins:
@@ -55,6 +61,14 @@ def ensure_cors_headers(resp):
         if o == origin:
             allowed = True
             break
+    # Heurística adicional: permitir despliegues dinámicos de Vercel del mismo proyecto
+    # Ejemplo: https://seg-front-xxxxx-jair-herreras-projects-*.vercel.app
+    if not allowed:
+        try:
+            if re.match(r'^https://seg-front-[a-zA-Z0-9-]+\.vercel\.app$', origin):
+                allowed = True
+        except Exception:
+            pass
     if allowed:
         resp.headers['Access-Control-Allow-Origin'] = origin
         resp.headers['Vary'] = 'Origin'
