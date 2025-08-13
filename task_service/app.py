@@ -12,11 +12,22 @@ app = Flask(__name__)
 
 # CORS unificado
 import os
+import re
 origins_env = os.environ.get('CORS_ORIGINS')
 if origins_env:
-    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+    raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
 else:
-    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+    raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
+
+_origins = []
+for o in raw_origins:
+    if o.lower().startswith('regex:'):
+        try:
+            _origins.append(re.compile(o[6:]))
+        except re.error:
+            pass
+    else:
+        _origins.append(o)
 
 CORS(
     app,

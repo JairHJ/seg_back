@@ -5,6 +5,7 @@ import bcrypt
 from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 import os
+import re
 import logging
 import pyotp
 import qrcode
@@ -19,9 +20,23 @@ app = Flask(__name__)
 # Si no está definida, habilitamos localhost y el dominio de producción por defecto.
 origins_env = os.environ.get('CORS_ORIGINS')
 if origins_env:
-    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+    raw_origins = [o.strip() for o in origins_env.split(',') if o.strip()]
 else:
-    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+    # Incluimos un regex por defecto para subdominios de vercel de este proyecto
+    raw_origins = ['http://localhost:4200', 'https://seg-front.vercel.app', 'regex:https://seg-front.*vercel.app']
+
+# Soporte de patrones: si un origen empieza con 'regex:' lo convertimos a regex compilado
+_origins = []
+for o in raw_origins:
+    if o.lower().startswith('regex:'):
+        try:
+            pattern = o[6:]
+            _origins.append(re.compile(pattern))
+        except re.error:
+            # Si regex inválido lo ignoramos (o podríamos loggear)
+            pass
+    else:
+        _origins.append(o)
 
 CORS(
     app,
