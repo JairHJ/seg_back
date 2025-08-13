@@ -311,7 +311,49 @@ def proxy_user(path):
 @app.route('/task', defaults={'path': ''}, methods=['GET','POST','PUT','DELETE','OPTIONS'])
 @app.route('/task/<path:path>', methods=['GET','POST','PUT','DELETE','OPTIONS'])
 def proxy_tasks(path):
-    return _forward(TASK_SERVICE_URL, '/tasks', path)
+    # Mapeo especial porque el microservicio mezcla rutas /tasks y rutas raíz (register_task, update_task, etc.)
+    # Reglas:
+    #  GET /tasks                -> upstream /tasks
+    #  GET /tasks/<id>           -> upstream /tasks/<id>
+    #  /tasks/register_task      -> upstream /register_task (raíz)
+    #  /tasks/update_task/<id>   -> upstream /update_task/<id>
+    #  variantes delete/enable/disable igual.
+    suffix = path or ''
+    method = request.method
+    root_ops = ('register_task', 'update_task', 'delete_task', 'disable_task', 'enable_task')
+    # Detectar ObjectId (24 hex) para GET individual
+    import re as _re
+    is_object_id = bool(suffix and _re.fullmatch(r'[0-9a-fA-F]{24}', suffix))
+    if suffix == '' and method == 'GET':
+        upstream_path = '/tasks'
+    elif is_object_id and method == 'GET':
+        upstream_path = f'/tasks/{suffix}'
+    else:
+        # Comprobar si comienza con alguna operación raíz
+        if any(suffix.startswith(op) for op in root_ops):
+            upstream_path = '/' + suffix  # raíz
+        else:
+            # Cualquier otro caso lo consideramos relativo a /tasks
+            upstream_path = '/tasks' + ('/' + suffix if suffix else '')
+    # Construir target conservando query
+    qs = request.query_string.decode()
+    target = TASK_SERVICE_URL.rstrip('/') + upstream_path
+    if qs:
+        target += '?' + qs
+    try:
+        fwd_headers = _filtered_headers()
+        fwd_headers['Accept-Encoding'] = 'gzip, deflate, br'
+        resp = requests.request(
+            method=method,
+            url=target,
+            headers=fwd_headers,
+            timeout=FORWARD_TIMEOUT
+        )
+        excluded = {'transfer-encoding', 'connection', 'keep-alive'}
+        headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded]
+        return Response(resp.content, status=resp.status_code, headers=headers)
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': 'Upstream tasks error', 'detail': str(e), 'target': target}), 502
 
 # ================== FIN PROXY ==================
 
