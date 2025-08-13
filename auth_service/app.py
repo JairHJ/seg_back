@@ -4,6 +4,7 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 import os
 import re
 import logging
@@ -73,6 +74,15 @@ logger = logging.getLogger(__name__)
 
 # Inicializar admin en MongoDB si no existe
 def init_db():
+    # Crear índices únicos (idempotente: si ya existen MongoDB ignora)
+    try:
+        users_collection.create_index('username', unique=True)
+    except Exception as e:
+        logger.warning(f"No se pudo crear índice único en username: {e}")
+    try:
+        users_collection.create_index('email', unique=True)
+    except Exception as e:
+        logger.warning(f"No se pudo crear índice único en email: {e}")
     admin = users_collection.find_one({'username': 'admin'})
     if not admin:
         admin_password = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt())
@@ -209,6 +219,14 @@ def register():
         email = data.get('email')
         password = data.get('password')
 
+        # Normalización básica (trim). Email a minúsculas para evitar duplicados case-insensitive.
+        if isinstance(username, str):
+            username = username.strip()
+        if isinstance(email, str):
+            email = email.strip().lower()
+
+        logger.info(f"Intento de registro username='{username}' email='{email}'")
+
         if not all([username, email, password]):
             return jsonify({'error': 'Todos los campos son requeridos'}), 400
 
@@ -218,9 +236,21 @@ def register():
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         mfa_secret = pyotp.random_base32()
 
-        # Verificar unicidad
-        if users_collection.find_one({'$or': [{'username': username}, {'email': email}]}):
-            return jsonify({'error': 'Username o email ya existe'}), 409
+        # Verificar unicidad diferenciando campo para mejor feedback
+        existing_username = users_collection.find_one({'username': username})
+        if existing_username:
+            logger.info(f"Registro duplicado username existente username='{username}' id={existing_username.get('_id')}")
+            return jsonify({
+                'error': 'El nombre de usuario ya está en uso',
+                'code': 'USERNAME_EXISTS'
+            }), 409
+        existing_email = users_collection.find_one({'email': email})
+        if existing_email:
+            logger.info(f"Registro duplicado email existente email='{email}' id={existing_email.get('_id')}")
+            return jsonify({
+                'error': 'El email ya está registrado',
+                'code': 'EMAIL_EXISTS'
+            }), 409
 
         user_doc = {
             'username': username,
@@ -231,7 +261,16 @@ def register():
             'created_at': datetime.utcnow(),
             'updated_at': datetime.utcnow()
         }
-        result = users_collection.insert_one(user_doc)
+        try:
+            result = users_collection.insert_one(user_doc)
+        except DuplicateKeyError:
+            # Carrera entre dos solicitudes simultáneas: identificar cuál campo chocó intentando otra vez consultas
+            logger.info(f"DuplicateKeyError race condition username='{username}' email='{email}'")
+            if users_collection.find_one({'username': username}):
+                return jsonify({'error': 'El nombre de usuario ya está en uso', 'code': 'USERNAME_EXISTS'}), 409
+            if users_collection.find_one({'email': email}):
+                return jsonify({'error': 'El email ya está registrado', 'code': 'EMAIL_EXISTS'}), 409
+            return jsonify({'error': 'Username o email ya existe', 'code': 'USER_EXISTS'}), 409
         user_id = str(result.inserted_id)
 
         # Generar código QR para MFA
@@ -258,7 +297,7 @@ def register():
         return jsonify(response_payload), 201
 
     except Exception as e:
-        logger.error(f"Error en registro: {str(e)}")
+        logger.error(f"Error en registro: {str(e)}", exc_info=True)
         return jsonify({'error': 'Error interno del servidor'}), 500
 
 @app.route('/verify', methods=['POST'])
