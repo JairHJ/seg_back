@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, g, Response
+from flask import Flask, jsonify, request, g, Response, make_response
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -61,6 +61,17 @@ def ensure_cors_headers(resp):
         resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     return resp
+
+# Manejo global de preflight OPTIONS (responder directamente sin proxy)
+@app.before_request
+def handle_preflight():
+    if request.method == 'OPTIONS':
+        # Respuesta vacía con 200; flask-cors + ensure_cors_headers añadirán cabeceras
+        resp = make_response('', 200)
+        # Añadimos explícitamente por robustez
+        resp.headers.setdefault('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        resp.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return resp
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
@@ -135,7 +146,7 @@ def _start_timer():
 def _log_request(resp):
     try:
         # Evitar logging interno de favicon o estáticos si los hubiera
-        if request.path.startswith('/health') or request.path.startswith('/logs'):
+        if request.method == 'OPTIONS' or request.path.startswith('/health') or request.path.startswith('/logs'):
             return resp
         duration_ms = int((time.time() - getattr(g, '_start_time', time.time())) * 1000)
         api_name = request.path.strip('/').split('/')[0] or 'root'
