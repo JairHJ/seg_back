@@ -9,7 +9,23 @@ import os
 from urllib.parse import urlparse
 
 app = Flask(__name__)
-CORS(app)
+
+# Configuración de CORS unificada
+origins_env = os.environ.get('CORS_ORIGINS')
+if origins_env:
+    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+else:
+    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+
+CORS(
+    app,
+    origins=_origins,
+    supports_credentials=True,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=600
+)
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 

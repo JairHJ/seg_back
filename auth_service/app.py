@@ -10,6 +10,8 @@ import pyotp
 import qrcode
 import io
 import base64
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 
@@ -30,6 +32,9 @@ CORS(
     expose_headers=["Content-Type"],
     max_age=600
 )
+
+# Rate Limiting (previene abuso de endpoints críticos)
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
 # Configuración
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
@@ -125,6 +130,7 @@ def verify_otp(secret, otp_code):
         return False
 
 @app.route('/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
 
     try:
@@ -176,6 +182,7 @@ def login():
         return jsonify({'error': 'Credenciales inválidas'}), 401
 
 @app.route('/register', methods=['POST'])
+@limiter.limit("5 per minute")
 def register():
 
     try:
@@ -215,16 +222,25 @@ def register():
         # Generar código QR para MFA
         qr_code = generate_qr_code(username, mfa_secret)
 
-        return jsonify({
+        # Generar token inmediato tras registro (flujo aceptado por el frontend)
+        access_token = generate_token(user_id, username)
+
+        response_payload = {
             'message': 'Usuario registrado exitosamente',
+            'access_token': access_token,
+            'token_type': 'Bearer',
             'user': {
                 'id': user_id,
                 'username': username,
                 'email': email
             },
-            'qr_code': qr_code,
-            'mfa_secret': mfa_secret  # Solo para propósitos de desarrollo, remover en producción
-        }), 201
+            'qr_code': qr_code
+        }
+        # Exponer mfa_secret sólo en desarrollo si MFA_DEBUG=1
+        if os.environ.get('MFA_DEBUG', '0') == '1':
+            response_payload['mfa_secret'] = mfa_secret
+
+        return jsonify(response_payload), 201
 
     except Exception as e:
         logger.error(f"Error en registro: {str(e)}")

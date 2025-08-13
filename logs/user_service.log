@@ -1,32 +1,4 @@
- * Serving Flask app 'app'
- * Debug mode: on
-[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on http://127.0.0.1:5002
-[33mPress CTRL+C to quit[0m
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
- * Detected change in '/home/giova/projects/fullstack/microservicios/user_service/app.py', reloading
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 754-858-075
+Traceback (most recent call last):
+  File "/home/giova/projects/fullstack/microservicios/user_service/app.py", line 4, in <module>
+    from pymongo import MongoClient
+ModuleNotFoundError: No module named 'pymongo'

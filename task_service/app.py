@@ -5,12 +5,33 @@ from bson.objectid import ObjectId
 import datetime
 import jwt
 from functools import wraps
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS unificado
+import os
+origins_env = os.environ.get('CORS_ORIGINS')
+if origins_env:
+    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+else:
+    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+
+CORS(
+    app,
+    origins=_origins,
+    supports_credentials=True,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=600
+)
+
+# Rate limiting general para el servicio de tareas (protege de abuso masivo)
+limiter = Limiter(get_remote_address, app=app, default_limits=["1000 per day", "300 per hour"])
 
 # Usa variable de entorno SECRET_KEY en producción. Define una por despliegue.
-import os
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-prod")
 
 

@@ -1,8 +1,11 @@
 import jwt
 import os
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-prod')
 
@@ -27,6 +30,27 @@ def token_required(f):
     return wraps(f)(decorated)
 
 app = Flask(__name__)
+
+# CORS unificado
+origins_env = os.environ.get('CORS_ORIGINS')
+if origins_env:
+    _origins = [o.strip() for o in origins_env.split(',') if o.strip()]
+else:
+    _origins = ['http://localhost:4200', 'https://seg-front.vercel.app']
+
+from flask_cors import CORS as _CORS
+_CORS(
+    app,
+    origins=_origins,
+    supports_credentials=True,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=600
+)
+
+# Rate limiting básico
+limiter = Limiter(get_remote_address, app=app, default_limits=["500 per day", "100 per hour"])
 
 # Conexión a MongoDB
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/user_service_db')
